@@ -1107,7 +1107,7 @@
     });
 
     if (els.envTag) {
-      els.envTag.textContent = inElectron ? '' : _t('SYSTEM', 'envTag', '（均好科技·数据自动保存在本地）');
+      els.envTag.textContent = inElectron ? '' : _t('SYSTEM', 'envTag', '均好科技·序列号检测系统');
     }
 
     // 作者卡片的图片资源统一从 TEXTS.AUTHOR_ASSETS 读取路径
