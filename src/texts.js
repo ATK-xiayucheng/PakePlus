@@ -13,14 +13,14 @@
     name: '扫码序列号管理',
     homeName: '扫码管理系统',
     pageTitle: '扫码管理系统 - 项目管理',
-    envTag: '均好科技·数据自动保存在本地',
+    envTag: '均好科技·序列号检测系统',
     homeSubTitle: '选择或创建一个项目，开始扫码',
     emptyProjectTitle: '暂无项目',
     emptyProjectTip: '点击上方"新建项目"创建一个新项目开始扫码',
     placeholderSerial: '在此输入或粘贴序列号，回车提交...',
     placeholderSearch: '搜索序列号...',
     placeholderModel: '例如：ABC-2024',
-    previewHint: '提示：可以把数据导出存档，避免数据丢失。'
+    previewHint: '温馨提示：操作完成后请及时保存数据，避免数据丢失。误触可能导致删除，请谨慎操作。'
   };
 
   // ---------- 作者与联系方式（会同时出现在两个页面的"关于作者"弹窗中） ----------
@@ -35,7 +35,7 @@
     copyWechat: '复制微信号',
     copyPhone: '复制电话',
     qrcodeWechatTitle: '添加微信',
-    qrcodeWechatDesc: '扫描二维码添加作者微信',
+    qrcodeWechatDesc: '扫码添加作者微信',
     qrcodeRewardTitle: '扫码打赏',
     qrcodeRewardDesc: '扫码打赏支持作者'
   };
