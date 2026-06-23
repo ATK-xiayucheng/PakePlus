@@ -50,7 +50,7 @@
       <button id="btn-submit" type="button">提交</button>
     </div>
     <div id="scan-tip" class="tip">
-      提示：可以把数据导出存档，避免数据丢失。
+      温馨提示：操作完成后请及时保存数据，避免数据丢失。误触可能导致删除，请谨慎操作。
     </div>
   </section>
 
@@ -125,7 +125,7 @@
     <div class="modal-box author-card">
       <button type="button" class="author-close" data-close-author="1" aria-label="关闭">×</button>
       <div class="author-avatar">
-        <img id="author-avatar-img-scan" src="author-assets/头像.jpg" alt="作者头像">
+        <img id="author-avatar-img-scan" src="author-assets/avatar.jpg" alt="作者头像">
       </div>
       <h3 id="author-name-scan" class="author-name">作者：夏宇铖</h3>
       <div class="author-info">
@@ -297,7 +297,7 @@
       var qwLabel = document.getElementById('qrcode-wechat-label-scan');
       if (qwLabel) qwLabel.textContent = '💬 ' + (AUTHOR.qrcodeWechatTitle || '添加微信');
       var qwDesc = document.getElementById('qrcode-wechat-desc-scan');
-      if (qwDesc) qwDesc.textContent = AUTHOR.qrcodeWechatDesc || '扫描二维码添加作者微信';
+      if (qwDesc) qwDesc.textContent = AUTHOR.qrcodeWechatDesc || '扫码添加作者微信';
       var qrLabel = document.getElementById('qrcode-reward-label-scan');
       if (qrLabel) qrLabel.textContent = '☕ ' + (AUTHOR.qrcodeRewardTitle || '扫码打赏');
       var qrDesc = document.getElementById('qrcode-reward-desc-scan');
