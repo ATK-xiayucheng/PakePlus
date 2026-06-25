@@ -466,10 +466,14 @@
     });
 
     // 页面内二次确认（替代原生 confirm），返回 Promise<boolean>
-    function showConfirm(message) {
+    function showConfirm(message, options) {
       return new Promise(function (resolve) {
         if (!els.modal) return resolve(true);
-        setText(els.modalBody, message || '确定要继续吗？');
+        if (options && options.html) {
+          els.modalBody.innerHTML = message || '确定要继续吗？';
+        } else {
+          setText(els.modalBody, message || '确定要继续吗？');
+        }
         setClass(els.modal, 'modal');
 
         function cleanup() {
@@ -749,8 +753,30 @@
 
         // 浏览器预览版
         try {
-          XLSX.writeFile(wb, filename);
-          showToast('success', _t('TOAST', 'exportSuccessBrowser', '已导出 Excel') + '（' + list.length + ' 条）');
+          var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+          var dataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+          
+          // 创建下载弹窗
+          var downloadHtml = '<div style="text-align:center;padding:10px 0;">'
+            + '<p style="margin-bottom:16px;color:#64748b;">点击下方按钮下载 Excel 文件</p>'
+            + '<p style="margin-bottom:20px;font-size:14px;color:#475569;">文件名：' + filename + '</p>'
+            + '<a id="pake-download-link" href="' + dataUrl + '" download="' + filename + '" '
+            + 'style="display:inline-block;padding:12px 32px;background:#4f46e5;color:#fff;text-decoration:none;'
+            + 'border-radius:8px;font-size:16px;font-weight:500;">点击下载 Excel</a>'
+            + '<p style="margin-top:16px;font-size:13px;color:#94a3b8;">如果点击没反应，请右键选择「另存为」</p>'
+            + '</div>';
+          
+          showConfirm(downloadHtml, { html: true });
+          
+          // 尝试自动触发下载
+          setTimeout(function() {
+            var link = document.getElementById('pake-download-link');
+            if (link) {
+              link.addEventListener('click', function(e) {
+                e.stopPropagation();
+              });
+            }
+          }, 50);
         } catch (e) {
           showToast('error', _t('TOAST', 'exportBrowserBlocked', '浏览器阻止了下载'));
         }
