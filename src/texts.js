@@ -45,9 +45,9 @@
   // 替换方法：把你的图片（推荐 .jpg 或 .png）命名为下方的文件名，放到 src/author-assets/ 文件夹即可
   var AUTHOR_ASSETS = {
     dir: 'author-assets',                       // 资源文件夹名称（不要修改，除非你确实想改文件夹）
-    avatar: 'author-assets/头像.jpg',         // 作者头像（圆形展示）——把你的头像图片命名为 avatar.jpg 放到这个文件夹
-    wechatQrcode: 'author-assets/微信.jpg', // 微信添加二维码图片 —— 替换为你自己的微信二维码（推荐 wechat-qrcode.jpg/png）
-    rewardQrcode: 'author-assets/赞赏码.jpg'  // 扫码打赏二维码图片 —— 替换为你自己的打赏码（推荐 reward-qrcode.jpg/png）
+    avatar: 'author-assets/avatar.jpg',         // 作者头像（圆形展示）——把你的头像图片命名为 avatar.jpg 放到这个文件夹
+    wechatQrcode: 'author-assets/wechat-qrcode.jpg',
+    rewardQrcode: 'author-assets/reward-qrcode.jpg'
   };
 
   // ---------- 按钮 ----------
@@ -132,7 +132,10 @@
     focusReturnLabel: '光标自动吸附延迟（秒）',
     focusReturnHint: '鼠标点击其他地方后，光标延迟多少秒自动回到输入框。设为 0 则关闭自动吸附，可输入 0 ~ 300 秒，默认 2 秒。',
     focusReturnInvalid: '请输入 0 到 300 之间的整数秒数',
-    focusReturnSaved: '已保存，光标自动吸附延迟 '
+    focusReturnSaved: '已保存，光标自动吸附延迟 ',
+    soundEnabledLabel: '扫描提示音',
+    soundEnabledHint: '扫码成功或重复时播放提示音，开启后成功为短促高音，重复/失败为低沉低音。',
+    soundSaved: '，扫描提示音 '
   };
 
   // ---------- Toast 通用文字 ----------
