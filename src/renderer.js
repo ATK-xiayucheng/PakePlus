@@ -103,6 +103,7 @@
     var historyResolver = null;
     var focusReturnTimer = null;
     var focusAutoReturnDelay = 3;
+    var audioCtx = null;
 
     /* ---------------- 工具函数 ---------------- */
 
@@ -169,6 +170,97 @@
         focusReturnTimer = null;
         ensureInputFocus();
       }, delay * 1000);
+    }
+
+    function getSoundEnabled() {
+      try {
+        var raw = localStorage.getItem('serial-scanner:settings');
+        if (!raw) return 1;
+        var obj = JSON.parse(raw);
+        if (!obj || typeof obj !== 'object') return 1;
+        var se = parseInt(obj.soundEnabled, 10);
+        if (!isFinite(se) || se < 0 || se > 1) return 1;
+        return se;
+      } catch (e) {
+        return 1;
+      }
+    }
+
+    function initAudio() {
+      if (audioCtx) return audioCtx;
+      try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        audioCtx = new AudioCtx();
+        return audioCtx;
+      } catch (e) {
+        console.warn('音频初始化失败:', e);
+        return null;
+      }
+    }
+
+    function playBeep(frequency, duration, volume, waveType) {
+      try {
+        if (!getSoundEnabled()) return;
+        var ctx = initAudio();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(function () {});
+        }
+        // 主振荡器
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = waveType || 'sine';
+        osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(volume || 0.3, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (duration || 0.15));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + (duration || 0.15));
+        // 叠加八度高频振荡器，让声音更响亮穿透
+        var osc2 = ctx.createOscillator();
+        var gain2 = ctx.createGain();
+        osc2.type = waveType || 'sine';
+        osc2.frequency.value = frequency * 2;
+        gain2.gain.setValueAtTime(0, ctx.currentTime);
+        gain2.gain.linearRampToValueAtTime((volume || 0.3) * 0.7, ctx.currentTime + 0.01);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (duration || 0.15));
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime);
+        osc2.stop(ctx.currentTime + (duration || 0.15));
+      } catch (e) {
+        console.warn('播放提示音失败:', e);
+      }
+    }
+
+    function playSuccessSound() {
+      speakText('扫码成功', 1);
+    }
+
+    function playErrorSound() {
+      speakText('扫码失败', 2);
+    }
+
+    function speakText(text, times) {
+      try {
+        if (!getSoundEnabled()) return;
+        if (!window.speechSynthesis) return;
+        var n = (times && times > 0) ? times : 1;
+        window.speechSynthesis.cancel();
+        for (var i = 0; i < n; i++) {
+          var utter = new SpeechSynthesisUtterance(text);
+          utter.lang = 'zh-CN';
+          utter.rate = 1.0;
+          utter.volume = 1.0;
+          utter.pitch = 1.0;
+          window.speechSynthesis.speak(utter);
+        }
+      } catch (e) {
+        console.warn('语音播报失败:', e);
+      }
     }
 
     /* ---------------- 项目存储管理 ---------------- */
@@ -417,6 +509,7 @@
       }
     }
     var dupCountdownTimer = null;
+    var dupBeepTimer = null;
     function showDuplicateAlert(serial) {
       if (!els.dupAlert) return;
       if (els.dupSerial) els.dupSerial.textContent = serial;
@@ -434,6 +527,16 @@
         }
         if (els.dupCountdown) els.dupCountdown.textContent = String(sec);
       }, 1000);
+      // 持续播放"滴、滴、滴"直到弹窗关闭
+      stopDupBeep();
+      dupBeepTimer = setInterval(function () { playBeep(1000, 0.15, 2.0, 'square'); }, 300);
+    }
+
+    function stopDupBeep() {
+      if (dupBeepTimer) {
+        clearInterval(dupBeepTimer);
+        dupBeepTimer = null;
+      }
     }
 
     function closeDuplicateAlert() {
@@ -442,6 +545,7 @@
         clearInterval(dupCountdownTimer);
         dupCountdownTimer = null;
       }
+      stopDupBeep();
       setTimeout(ensureInputFocus, 50);
     }
 
@@ -636,6 +740,7 @@
           state.duplicate += 1;
           setStatus('duplicate', _t('STATUS', 'duplicate', '重复！序列号') + ' ' + serial + ' 已扫描过');
           showDuplicateAlert(serial);
+          playErrorSound();
           renderStats();
         } else {
           list.push({ serial: serial, scannedAt: new Date().toISOString() });
@@ -643,6 +748,7 @@
           state.success += 1;
           setStatus('success', _t('STATUS', 'success', '扫码成功') + '：' + serial + '（共 ' + list.length + ' 条）');
           showToast('success', _t('STATUS', 'success', '扫码成功'));
+          playSuccessSound();
           saveData();
           renderList();
         }
@@ -881,23 +987,26 @@
       if (e.key === 'Enter') {
         e.preventDefault();
         if (autoSubmitTimer) { clearTimeout(autoSubmitTimer); autoSubmitTimer = null; }
+        initAudio();
         submitCurrent();
       }
     });
 
     // 扫码枪连发结束后自动提交
     els.input.addEventListener('input', function () {
+      initAudio(); // 在用户交互上下文中初始化音频，确保后续提示音可播放
       scheduleAutoSubmit();
     });
 
     // 粘贴后自动提交
     els.input.addEventListener('paste', function () {
+      initAudio();
       setTimeout(function () { scheduleAutoSubmit(); }, 10);
     });
 
     if (els.submit) {
       els.submit.addEventListener('click', function () {
-        try { submitCurrent(); } catch (e) { showToast('error', '提交异常'); }
+        try { initAudio(); submitCurrent(); } catch (e) { showToast('error', '提交异常'); }
       });
     }
 
