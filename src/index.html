@@ -489,6 +489,20 @@
         <input id="settings-focus-return" type="number" class="input-number" min="0" max="300" step="1" />
         <div id="settings-focus-return-hint" class="form-help">鼠标点击其他地方后，光标延迟多少秒自动回到输入框。设为 0 则关闭自动吸附，可输入 0 ~ 300 秒，默认 2 秒。</div>
       </div>
+      <div class="form-row">
+        <label class="form-label"><span id="settings-sound-label">扫描提示音</span></label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="radio" name="settings-sound" id="settings-sound-on" value="1" />
+            <span id="settings-sound-on-label">开启</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="radio" name="settings-sound" id="settings-sound-off" value="0" />
+            <span id="settings-sound-off-label">关闭</span>
+          </label>
+        </div>
+        <div id="settings-sound-hint" class="form-help">扫码成功或重复时播放提示音，开启后成功为短促高音，重复/失败为低沉低音。默认开启。</div>
+      </div>
       <div class="form-actions-row">
         <button class="btn-secondary" onclick="closeSettings()">取消</button>
         <button id="btn-settings-confirm" class="btn-primary" onclick="confirmSettings()">保存</button>
@@ -519,12 +533,12 @@
       <div class="qrcode-row">
         <div class="qrcode-item">
           <div id="qrcode-wechat-label" class="qrcode-label">💬 添加微信</div>
-          <img id="author-qrcode-img" src="author-assets/wechat-qrcode.svg" alt="微信添加二维码">
+          <img id="author-qrcode-img" src="author-assets/wechat-qrcode.jpg" alt="微信添加二维码">
           <p id="qrcode-wechat-desc">扫码添加作者微信</p>
         </div>
         <div class="qrcode-item">
           <div id="qrcode-reward-label" class="qrcode-label">☕ 扫码打赏</div>
-          <img id="author-reward-img" src="author-assets/reward-qrcode.svg" alt="打赏码">
+          <img id="author-reward-img" src="author-assets/reward-qrcode.jpg" alt="打赏码">
           <p id="qrcode-reward-desc">扫码打赏支持作者</p>
         </div>
       </div>
@@ -610,6 +624,10 @@
         _setText('settings-countdown-hint', T.DUP.countdownHint || '当扫描到重复的序列号时，提示弹窗将在该秒数后自动关闭。可输入 1 ~ 300 秒，默认 4 秒。');
         _setText('settings-focus-return-label', T.DUP.focusReturnLabel || '光标自动吸附延迟（秒）');
         _setText('settings-focus-return-hint', T.DUP.focusReturnHint || '鼠标点击其他地方后，光标延迟多少秒自动回到输入框。设为 0 则关闭自动吸附，可输入 0 ~ 300 秒，默认 2 秒。');
+        _setText('settings-sound-label', T.DUP.soundEnabledLabel || '扫描提示音');
+        _setText('settings-sound-hint', T.DUP.soundEnabledHint || '扫码成功或重复时播放提示音，开启后成功为短促高音，重复/失败为低沉低音。默认开启。');
+        _setText('settings-sound-on-label', T.BUTTON ? (T.BUTTON.soundOn || '开启') : '开启');
+        _setText('settings-sound-off-label', T.BUTTON ? (T.BUTTON.soundOff || '关闭') : '关闭');
         if (T.BUTTON) {
           var btnSave = document.getElementById('btn-settings-confirm');
           if (btnSave) btnSave.textContent = T.BUTTON.save || '保存';
@@ -659,18 +677,20 @@
     function getSettings() {
       try {
         var raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return { duplicateCountdown: 4, focusAutoReturnDelay: 2 };
+        if (!raw) return { duplicateCountdown: 4, focusAutoReturnDelay: 2, soundEnabled: 1 };
         var obj = JSON.parse(raw);
-        if (typeof obj !== 'object' || obj === null) return { duplicateCountdown: 4, focusAutoReturnDelay: 2 };
+        if (typeof obj !== 'object' || obj === null) return { duplicateCountdown: 4, focusAutoReturnDelay: 2, soundEnabled: 1 };
         var cd = parseInt(obj.duplicateCountdown, 10);
         if (!isFinite(cd) || cd < 1) cd = 4;
         if (cd > 300) cd = 300;
         var fd = parseInt(obj.focusAutoReturnDelay, 10);
         if (!isFinite(fd) || fd < 0) fd = 2;
         if (fd > 300) fd = 300;
-        return { duplicateCountdown: cd, focusAutoReturnDelay: fd };
+        var se = parseInt(obj.soundEnabled, 10);
+        if (!isFinite(se) || se < 0 || se > 1) se = 1;
+        return { duplicateCountdown: cd, focusAutoReturnDelay: fd, soundEnabled: se };
       } catch (e) {
-        return { duplicateCountdown: 4, focusAutoReturnDelay: 2 };
+        return { duplicateCountdown: 4, focusAutoReturnDelay: 2, soundEnabled: 1 };
       }
     }
     function saveSettings(s) {
@@ -683,6 +703,11 @@
       var s = getSettings();
       document.getElementById('settings-countdown').value = s.duplicateCountdown;
       document.getElementById('settings-focus-return').value = s.focusAutoReturnDelay;
+      if (s.soundEnabled) {
+        document.getElementById('settings-sound-on').checked = true;
+      } else {
+        document.getElementById('settings-sound-off').checked = true;
+      }
       document.getElementById('settings-modal').style.display = 'block';
       setTimeout(function(){ document.getElementById('settings-countdown').focus(); }, 50);
     }
@@ -704,11 +729,14 @@
         showToast('error', fdInvalidMsg);
         return;
       }
-      saveSettings({ duplicateCountdown: cd, focusAutoReturnDelay: fd });
+      var soundOnEl = document.getElementById('settings-sound-on');
+      var se = soundOnEl && soundOnEl.checked ? 1 : 0;
+      saveSettings({ duplicateCountdown: cd, focusAutoReturnDelay: fd, soundEnabled: se });
       closeSettings();
       var savedMsg = (window.TEXTS && window.TEXTS.DUP && window.TEXTS.DUP.countdownSaved) ? (window.TEXTS.DUP.countdownSaved + cd + ' 秒') : ('已保存，重复弹窗倒计时 ' + cd + ' 秒');
       var fdSavedMsg = (window.TEXTS && window.TEXTS.DUP && window.TEXTS.DUP.focusReturnSaved) ? (window.TEXTS.DUP.focusReturnSaved + fd + ' 秒') : ('，光标自动吸附延迟 ' + fd + ' 秒');
-      showToast('success', savedMsg + fdSavedMsg);
+      var soundSavedMsg = (window.TEXTS && window.TEXTS.DUP && window.TEXTS.DUP.soundSaved) ? (window.TEXTS.DUP.soundSaved + (se ? '开启' : '关闭')) : ('，扫描提示音 ' + (se ? '开启' : '关闭'));
+      showToast('success', savedMsg + fdSavedMsg + soundSavedMsg);
     }
 
     var STORAGE_KEY = 'serial-scanner:data';
